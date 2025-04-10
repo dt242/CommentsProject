@@ -23,14 +23,6 @@ public class CommentService {
         return commentRepository.save(comment);
     }
 
-//    @Transactional
-//    public Comment updateComment(Long commentId, String content) {
-//        Comment comment = commentRepository.findById(commentId)
-//                .orElseThrow(() -> new RuntimeException("Comment not found"));
-//        comment.setContent(content);
-//        return commentRepository.save(comment);
-//    }
-
     @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
