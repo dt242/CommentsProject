@@ -1,5 +1,10 @@
-FROM openjdk:22-jdk
+FROM maven:3.9.4-eclipse-temurin-22 AS build
 WORKDIR /app
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
+COPY . .
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:22
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
