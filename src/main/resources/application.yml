@@ -3,9 +3,9 @@ spring:
     name: comments-project
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/comment_section_app
-    username: postgres
-    password: your_password_here
+    url: jdbc:postgresql://dpg-d00ifhidbo4c7393er6g-a:5432/capturethis_db
+    username: capturethis_db_user
+    password: aFtpyGiXukm14LLk354aL7rLhMgyYLKy
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -14,6 +14,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        default_schema: comments
         dialect: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: true
 
