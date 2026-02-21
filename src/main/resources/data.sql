@@ -1,4 +1,3 @@
--- Sample comments
 INSERT INTO comments (post_id, user_id, content, created_at, updated_at, is_deleted) VALUES
 (1, 5, 'Nice shot!', '2024-12-01T12:30:00', NULL, false),
 (1, 12, 'Love the colors!', '2024-12-01T13:00:00', NULL, false),

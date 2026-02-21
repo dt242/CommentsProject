@@ -4,8 +4,8 @@ spring:
     name: comments-project
   datasource:
     url: jdbc:mysql://localhost:3306/comment-section-app?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true&serverTimezone=UTC
-    username: root
-    password: Dani
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
   jpa:
     hibernate:
       ddl-auto: create
