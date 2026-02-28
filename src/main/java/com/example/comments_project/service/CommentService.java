@@ -3,22 +3,27 @@ package com.example.comments_project.service;
 import com.example.comments_project.model.Comment;
 import com.example.comments_project.model.CommentDTO;
 import com.example.comments_project.repository.CommentRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class CommentService {
 
-    @Autowired
-    private CommentRepository commentRepository;
+    private final CommentRepository commentRepository;
 
+    public CommentService(CommentRepository commentRepository) {
+        this.commentRepository = commentRepository;
+    }
+
+    @Transactional(readOnly = true)
     public List<Comment> getCommentsByPostId(Long postId) {
         return commentRepository.findByPostIdAndIsDeletedFalse(postId);
     }
 
+    @Transactional
     public Comment addComment(Comment comment) {
         return commentRepository.save(comment);
     }
@@ -26,9 +31,9 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found with ID: " + commentId));
+
         comment.setDeleted(true);
-        commentRepository.save(comment);
     }
 
     public static CommentDTO mapToCommentDTO(Comment comment) {
@@ -41,5 +46,13 @@ public class CommentService {
                 .updatedAt(comment.getUpdatedAt())
                 .isDeleted(comment.isDeleted())
                 .build();
+    }
+
+    public static Comment mapToEntity(CommentDTO commentDTO) {
+        Comment comment = new Comment();
+        comment.setPostId(commentDTO.getPostId());
+        comment.setUserId(commentDTO.getUserId());
+        comment.setContent(commentDTO.getContent());
+        return comment;
     }
 }
