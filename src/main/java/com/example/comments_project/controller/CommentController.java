@@ -3,7 +3,7 @@ package com.example.comments_project.controller;
 import com.example.comments_project.model.Comment;
 import com.example.comments_project.model.CommentDTO;
 import com.example.comments_project.service.CommentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +15,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/comments")
 public class CommentController {
 
-    @Autowired
-    private CommentService commentService;
+    private final CommentService commentService;
+
+    public CommentController(CommentService commentService) {
+        this.commentService = commentService;
+    }
 
     @GetMapping("/post/{postId}")
     public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
@@ -29,12 +32,11 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<CommentDTO> addComment(@RequestBody CommentDTO commentDTO) {
-        Comment comment = new Comment();
-        comment.setPostId(commentDTO.getPostId());
-        comment.setUserId(commentDTO.getUserId());
-        comment.setContent(commentDTO.getContent());
+        Comment comment = CommentService.mapToEntity(commentDTO);
+
         Comment createdComment = commentService.addComment(comment);
         CommentDTO createdCommentDTO = CommentService.mapToCommentDTO(createdComment);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(createdCommentDTO);
     }
 
@@ -44,8 +46,8 @@ public class CommentController {
         return ResponseEntity.noContent().build();
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleNotFoundException(RuntimeException ex) {
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleNotFoundException(EntityNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 }
