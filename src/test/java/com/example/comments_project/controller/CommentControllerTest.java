@@ -3,6 +3,7 @@ package com.example.comments_project.controller;
 import com.example.comments_project.model.Comment;
 import com.example.comments_project.model.CommentDTO;
 import com.example.comments_project.service.CommentService;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,7 +82,7 @@ public class CommentControllerTest {
 
     @Test
     void testHandleNotFoundException() {
-        RuntimeException exception = new RuntimeException("Not Found");
+        EntityNotFoundException exception = new EntityNotFoundException("Not Found");
 
         ResponseEntity<String> response = commentController.handleNotFoundException(exception);
 
