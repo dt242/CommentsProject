@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
@@ -19,20 +20,24 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<Comment> getCommentsByPostId(Long postId) {
-        return commentRepository.findByPostIdAndIsDeletedFalse(postId);
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
+        return commentRepository.findByPostIdAndIsDeletedFalse(postId)
+                .stream()
+                .map(CommentService::mapToCommentDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Comment addComment(Comment comment) {
-        return commentRepository.save(comment);
+    public CommentDTO addComment(CommentDTO commentDTO) {
+        Comment comment = mapToEntity(commentDTO);
+        Comment savedComment = commentRepository.save(comment);
+        return mapToCommentDTO(savedComment);
     }
 
     @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found with ID: " + commentId));
-
         comment.setDeleted(true);
     }
 

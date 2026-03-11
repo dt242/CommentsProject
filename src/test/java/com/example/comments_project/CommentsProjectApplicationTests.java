@@ -9,5 +9,4 @@ class CommentsProjectApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }

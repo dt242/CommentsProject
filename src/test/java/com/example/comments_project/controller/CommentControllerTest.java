@@ -1,23 +1,32 @@
 package com.example.comments_project.controller;
 
-import com.example.comments_project.model.Comment;
 import com.example.comments_project.model.CommentDTO;
 import com.example.comments_project.service.CommentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
 public class CommentControllerTest {
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @Mock
     private CommentService commentService;
@@ -25,19 +34,16 @@ public class CommentControllerTest {
     @InjectMocks
     private CommentController commentController;
 
-    private Comment comment;
     private CommentDTO commentDTO;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(commentController).build();
 
-        comment = new Comment();
-        comment.setPostId(1L);
-        comment.setUserId(1L);
-        comment.setContent("Test comment");
-
+        objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
         commentDTO = CommentDTO.builder()
+                .id(10L)
                 .postId(1L)
                 .userId(1L)
                 .content("Test comment")
@@ -48,45 +54,47 @@ public class CommentControllerTest {
     }
 
     @Test
-    void testGetCommentsByPostId() {
-        List<Comment> comments = List.of(comment);
+    void testGetCommentsByPostId_ShouldReturnJsonArray() throws Exception {
+        List<CommentDTO> comments = List.of(commentDTO);
         when(commentService.getCommentsByPostId(1L)).thenReturn(comments);
 
-        ResponseEntity<List<CommentDTO>> response = commentController.getCommentsByPostId(1L);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1, response.getBody().size());
-        assertEquals("Test comment", response.getBody().get(0).getContent());
+        mockMvc.perform(get("/api/comments/post/{postId}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$[0].content").value("Test comment"));
     }
 
     @Test
-    void testAddComment() {
-        when(commentService.addComment(any(Comment.class))).thenReturn(comment);
+    void testAddComment_ShouldReturnCreated() throws Exception {
+        when(commentService.addComment(any(CommentDTO.class))).thenReturn(commentDTO);
 
-        ResponseEntity<CommentDTO> response = commentController.addComment(commentDTO);
+        mockMvc.perform(post("/api/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(commentDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.content").value("Test comment"))
+                .andExpect(jsonPath("$.id").value(10));
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Test comment", response.getBody().getContent());
+        verify(commentService, times(1)).addComment(any(CommentDTO.class));
     }
 
     @Test
-    void testDeleteComment() {
+    void testDeleteComment_ShouldReturnNoContent() throws Exception {
         doNothing().when(commentService).deleteComment(1L);
 
-        ResponseEntity<Void> response = commentController.deleteComment(1L);
+        mockMvc.perform(delete("/api/comments/{commentId}", 1L))
+                .andExpect(status().isNoContent());
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(commentService, times(1)).deleteComment(1L);
     }
 
     @Test
-    void testHandleNotFoundException() {
-        EntityNotFoundException exception = new EntityNotFoundException("Not Found");
+    void testHandleNotFoundException_ShouldReturn404() throws Exception {
+        doThrow(new EntityNotFoundException("Comment not found")).when(commentService).deleteComment(99L);
 
-        ResponseEntity<String> response = commentController.handleNotFoundException(exception);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("Not Found", response.getBody());
+        mockMvc.perform(delete("/api/comments/{commentId}", 99L))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Comment not found"));
     }
 }
